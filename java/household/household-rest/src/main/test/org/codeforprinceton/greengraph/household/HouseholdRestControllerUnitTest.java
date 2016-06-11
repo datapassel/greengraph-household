@@ -1,9 +1,12 @@
 /** Copyright (c) 2016. Code for Princeton. All rights reserved. */
-package org.codeforprinceton.greengraph.household.rest.controllers;
+package org.codeforprinceton.greengraph.household;
 
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup;
 
@@ -13,10 +16,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.codeforprinceton.greengraph.household.model.Household;
-import org.codeforprinceton.greengraph.household.repository.AccountRepository;
-import org.codeforprinceton.greengraph.household.repository.HouseholdRepository;
-import org.codeforprinceton.greengraph.household.rest.Application;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,7 +32,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.context.WebApplicationContext;
 
 /**
- * Household REST Controller Unit Tests.
+ * Household REST Controller Unit Test.
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = Application.class)
@@ -45,19 +44,19 @@ public class HouseholdRestControllerUnitTest {
 
 	private MockMvc mockMvc;
 
-	private String username = "codeforprinceton";
+	private String username = "code";
 
 	private HttpMessageConverter mappingJackson2HttpMessageConverter;
 
-	// private Account account;
+	private Account account;
 
 	private List<Household> householdList = new ArrayList<>();
 
 	@Autowired
-	private WebApplicationContext webApplicationContext;
+	private HouseholdRepository householdRepository;
 
 	@Autowired
-	private HouseholdRepository householdRepository;
+	private WebApplicationContext webApplicationContext;
 
 	@Autowired
 	private AccountRepository accountRepository;
@@ -68,8 +67,7 @@ public class HouseholdRestControllerUnitTest {
 		this.mappingJackson2HttpMessageConverter = Arrays.asList(converters).stream()
 				.filter(hmc -> hmc instanceof MappingJackson2HttpMessageConverter).findAny().get();
 
-		Assert.assertNotNull("The JSON message converter must not be null!", this.mappingJackson2HttpMessageConverter);
-
+		Assert.assertNotNull("The JSON message converter must not be null", this.mappingJackson2HttpMessageConverter);
 	}
 
 	@Before
@@ -80,54 +78,57 @@ public class HouseholdRestControllerUnitTest {
 		this.householdRepository.deleteAllInBatch();
 		this.accountRepository.deleteAllInBatch();
 
-		// this.account = accountRepository.save(new Account.Builder().username(username).password("password").build());
+		this.account = accountRepository.save(new Account.Builder().username(username).password("password").build());
 
-		this.householdList.add(householdRepository.save(new Household.Builder().address1("Princeton Library")
-				.address2("1 Washington Road").city("Princeton").state("New Jersey").zipCode("08544").build()));
-
-		this.householdList.add(householdRepository.save(new Household.Builder().address1("132 Mercer Street")
-				.city("Princeton").state("New Jersey").zipCode("08540").build()));
+		this.householdList.add(householdRepository.save(new Household.Builder().account(account)
+				.address1("First Address Line").address2("Second Address Line").build()));
+		this.householdList.add(householdRepository.save(new Household.Builder().account(account)
+				.address1("First Address Line").address2("Second Address Line").build()));
 	}
 
 	@Test
 	public void userNotFound() throws Exception {
 
-		mockMvc.perform(post("/notauser/households").content(this.json(new Household.Builder().build()))
-				.contentType(contentType)).andExpect(status().isNotFound());
-	}
-
-	@Test
-	public void readHouseholds() throws Exception {
-
-		mockMvc.perform(get("/" + username + "/households")).andExpect(status().isOk())
-				.andExpect(content().contentType(contentType));
-		// TODO add field level asserts
+		mockMvc.perform(post("/notcode/households/").content(this.json(new Household())).contentType(contentType))
+				.andExpect(status().isNotFound());
 	}
 
 	@Test
 	public void readSingleHousehold() throws Exception {
 
 		mockMvc.perform(get("/" + username + "/households/" + this.householdList.get(0).getId()))
-				.andExpect(status().isOk()).andExpect(content().contentType(contentType));
-		// TODO add field level asserts
+				.andExpect(status().isOk()).andExpect(content().contentType(contentType))
+				.andExpect(jsonPath("$.id", is(this.householdList.get(0).getId().intValue())))
+				.andExpect(jsonPath("$.address1", is("First Address Line")))
+				.andExpect(jsonPath("$.address2", is("Second Address Line")));
+	}
+
+	@Test
+	public void readHouseholds() throws Exception {
+
+		mockMvc.perform(get("/" + username + "/households")).andExpect(status().isOk())
+				.andExpect(content().contentType(contentType)).andExpect(jsonPath("$", hasSize(2)))
+				.andExpect(jsonPath("$[0].id", is(this.householdList.get(0).getId().intValue())))
+				.andExpect(jsonPath("$[0].address1", is("First Address Line")))
+				.andExpect(jsonPath("$[0].address2", is("Second Address Line")))
+				.andExpect(jsonPath("$[1].id", is(this.householdList.get(1).getId().intValue())))
+				.andExpect(jsonPath("$[1].address1", is("First Address Line")))
+				.andExpect(jsonPath("$[1].address2", is("Second Address Line")));
 	}
 
 	@Test
 	public void createHousehold() throws Exception {
 
-		String householdJson = json(new Household.Builder().address1("The Nassau Club").address2("6 Mercer Street")
-				.city("Princeton").state("New Jersey").zipCode("08540").build());
-
+		String householdJson = json(new Household.Builder().account(account).address1("First Address Line")
+				.address2("Second Address Line").build());
 		this.mockMvc.perform(post("/" + username + "/households").contentType(contentType).content(householdJson))
 				.andExpect(status().isCreated());
 	}
 
-	private String json(Household household) throws IOException {
+	protected String json(Object object) throws IOException {
 
 		MockHttpOutputMessage mockHttpOutputMessage = new MockHttpOutputMessage();
-
-		this.mappingJackson2HttpMessageConverter.write(household, MediaType.APPLICATION_JSON, mockHttpOutputMessage);
-
+		this.mappingJackson2HttpMessageConverter.write(object, MediaType.APPLICATION_JSON, mockHttpOutputMessage);
 		return mockHttpOutputMessage.getBodyAsString();
 	}
 }

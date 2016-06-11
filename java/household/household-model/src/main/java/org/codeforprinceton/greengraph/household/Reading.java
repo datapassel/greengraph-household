@@ -1,5 +1,5 @@
 /** Copyright (c) 2016. Code for Princeton. All rights reserved. */
-package org.codeforprinceton.greengraph.household.model;
+package org.codeforprinceton.greengraph.household;
 
 import java.util.Date;
 
