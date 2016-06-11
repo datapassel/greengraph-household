@@ -1,51 +1,62 @@
 /** Copyright (c) 2016. Code for Princeton. All rights reserved. */
-package org.codeforprinceton.greengraph.household.rest.controllers;
+package org.codeforprinceton.greengraph.household;
 
 import java.util.Collection;
 
-import org.codeforprinceton.greengraph.household.model.Household;
-import org.codeforprinceton.greengraph.household.repository.AccountRepository;
-import org.codeforprinceton.greengraph.household.repository.HouseholdRepository;
-import org.codeforprinceton.greengraph.household.repository.MeterRepository;
-import org.codeforprinceton.greengraph.household.repository.ReadingRepository;
-import org.codeforprinceton.greengraph.household.rest.exceptions.UserNotFoundException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 /**
  * Household Rest Controller.
  */
 @RestController
 @RequestMapping("/{username}/households")
+@ComponentScan(basePackages = "org.codeforprinceton.greengraph.household")
+@EnableAutoConfiguration
 public class HouseholdRestController {
 
 	private final HouseholdRepository householdRepository;
 
 	private final AccountRepository accountRepository;
 
-	private final MeterRepository meterRepository;
-
-	private final ReadingRepository readingRepository;
-
 	/**
 	 * Required constructor.
 	 * 
 	 * @param householdRepository the Household Repository
 	 * @param accountRepository the Account Repository
-	 * @param meterRepository the Meter Repository
-	 * @param readingRepository the Reading Repository
 	 */
-	public HouseholdRestController(HouseholdRepository householdRepository, AccountRepository accountRepository,
-			MeterRepository meterRepository, ReadingRepository readingRepository) {
+	@Autowired
+	public HouseholdRestController(HouseholdRepository householdRepository, AccountRepository accountRepository) {
 
 		super();
 
 		this.householdRepository = householdRepository;
 		this.accountRepository = accountRepository;
-		this.meterRepository = meterRepository;
-		this.readingRepository = readingRepository;
+	}
+
+	@RequestMapping(method = RequestMethod.POST)
+	ResponseEntity<?> add(@PathVariable String username, @RequestBody Household input) {
+
+		this.validateUser(username);
+		return this.accountRepository.findByUsername(username).map(account -> {
+			Household result = householdRepository.save(new Household.Builder().account(account)
+					.address1(input.getAddress1()).address2(input.getAddress2()).build());
+
+			HttpHeaders httpHeaders = new HttpHeaders();
+			httpHeaders.setLocation(ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
+					.buildAndExpand(result.getId()).toUri());
+			return new ResponseEntity<>(null, httpHeaders, HttpStatus.CREATED);
+		}).get();
 	}
 
 	/**
@@ -68,7 +79,7 @@ public class HouseholdRestController {
 	 * @param householdId the Household Identifier
 	 * @return the Household
 	 */
-	@RequestMapping(value = "/householdId", method = RequestMethod.GET)
+	@RequestMapping(value = "/{householdId} ", method = RequestMethod.GET)
 	public Household readHouseHold(@PathVariable String username, @PathVariable Long householdId) {
 
 		validateUser(username);
