@@ -1,6 +1,7 @@
 /** Copyright (c) 2016. Code for Princeton. All rights reserved. */
 package org.codeforprinceton.greengraph.household;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -39,8 +40,9 @@ import org.springframework.web.context.WebApplicationContext;
 @WebAppConfiguration
 public class HouseholdRestControllerTest {
 
-	private MediaType contentType = new MediaType(MediaType.APPLICATION_JSON.getType(),
-			MediaType.APPLICATION_JSON.getSubtype(), Charset.forName("utf8"));
+	// private MediaType contentType = new MediaType(MediaType.APPLICATION_JSON.getType(),
+	// MediaType.APPLICATION_JSON.getSubtype(), Charset.forName("utf8"));
+	private MediaType contentType = new MediaType("application", "hal+json");
 
 	private MockMvc mockMvc;
 
@@ -98,22 +100,31 @@ public class HouseholdRestControllerTest {
 
 		mockMvc.perform(get("/" + username + "/households/" + this.householdList.get(0).getId()))
 				.andExpect(status().isOk()).andExpect(content().contentType(contentType))
-				.andExpect(jsonPath("$.id", is(this.householdList.get(0).getId().intValue())))
-				.andExpect(jsonPath("$.address1", is("First Address Line")))
-				.andExpect(jsonPath("$.address2", is("Second Address Line")));
+				.andExpect(jsonPath("$.household.id", is(this.householdList.get(0).getId().intValue())))
+				.andExpect(jsonPath("$.household.address1", is("First Address Line")))
+				.andExpect(jsonPath("$.household.address2", is("Second Address Line")));
+		// .andExpect(jsonPath("$._links.self.href", containsString("/" + username + "/households/"
+		// + this.householdList.get(0).getId())));
 	}
 
 	@Test
 	public void readHouseholds() throws Exception {
 
 		mockMvc.perform(get("/" + username + "/households")).andExpect(status().isOk())
-				.andExpect(content().contentType(contentType)).andExpect(jsonPath("$", hasSize(2)))
-				.andExpect(jsonPath("$[0].id", is(this.householdList.get(0).getId().intValue())))
-				.andExpect(jsonPath("$[0].address1", is("First Address Line")))
-				.andExpect(jsonPath("$[0].address2", is("Second Address Line")))
-				.andExpect(jsonPath("$[1].id", is(this.householdList.get(1).getId().intValue())))
-				.andExpect(jsonPath("$[1].address1", is("First Address Line")))
-				.andExpect(jsonPath("$[1].address2", is("Second Address Line")));
+				.andExpect(content().contentType(contentType))
+				.andExpect(jsonPath("$._embedded.householdResourceList", hasSize(2)))
+				.andExpect(jsonPath("$._embedded.householdResourceList[0].household.id",
+						is(this.householdList.get(0).getId().intValue())))
+				.andExpect(
+						jsonPath("$._embedded.householdResourceList[0].household.address1", is("First Address Line")))
+				.andExpect(
+						jsonPath("$._embedded.householdResourceList[0].household.address2", is("Second Address Line")))
+				.andExpect(jsonPath("$._embedded.householdResourceList[1].household.id",
+						is(this.householdList.get(1).getId().intValue())))
+				.andExpect(
+						jsonPath("$._embedded.householdResourceList[1].household.address1", is("First Address Line")))
+				.andExpect(
+						jsonPath("$._embedded.householdResourceList[1].household.address2", is("Second Address Line")));
 	}
 
 	@Test
