@@ -1,7 +1,6 @@
 /** Copyright (c) 2016. Code for Princeton. All rights reserved. */
-package org.codeforprinceton.greengraph.household.repository;
+package org.codeforprinceton.greengraph.household;
 
-import org.codeforprinceton.greengraph.household.model.Meter;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**

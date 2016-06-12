@@ -1,5 +1,5 @@
 /** Copyright (c) 2016. Code for Princeton. All rights reserved. */
-package org.codeforprinceton.greengraph.household.rest.exceptions;
+package org.codeforprinceton.greengraph.household;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;

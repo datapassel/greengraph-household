@@ -1,17 +1,18 @@
 /** Copyright (c) 2016. Code for Princeton. All rights reserved. */
-package org.codeforprinceton.greengraph.household.model;
+package org.codeforprinceton.greengraph.household;
+
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * Account model POJO.
@@ -19,9 +20,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 @Entity
 public class Account {
 
-	@JsonIgnore
-	@ManyToOne
-	private Household household;
+	@OneToMany(mappedBy = "account")
+	private Set<Household> households = new HashSet<>();
 
 	@Id
 	@GeneratedValue
@@ -51,19 +51,6 @@ public class Account {
 		public Builder() {
 
 			account = new Account();
-		}
-
-		/**
-		 * Builder method that takes a property value for the Meter and allows us to chain the creation with other
-		 * property values.
-		 * 
-		 * @param value the Property Value
-		 * @return the Meter
-		 */
-		public Builder household(final Household value) {
-
-			account.setHousehold(value);
-			return this;
 		}
 
 		/**
@@ -103,14 +90,14 @@ public class Account {
 		}
 	}
 
-	public final Household getHousehold() {
+	public Set<Household> getHouseholds() {
 
-		return household;
+		return households;
 	}
 
-	public final void setHousehold(Household household) {
+	public void setHouseholds(Set<Household> households) {
 
-		this.household = household;
+		this.households = households;
 	}
 
 	public final Long getId() {
