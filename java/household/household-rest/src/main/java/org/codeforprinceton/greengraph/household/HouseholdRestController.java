@@ -1,11 +1,13 @@
 /** Copyright (c) 2016. Code for Princeton. All rights reserved. */
 package org.codeforprinceton.greengraph.household;
 
-import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.hateoas.Resources;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -66,10 +68,14 @@ public class HouseholdRestController {
 	 * @return the Collection of Household
 	 */
 	@RequestMapping(method = RequestMethod.GET)
-	public Collection<Household> readHouseholds(@PathVariable String username) {
+	public Resources<HouseholdResource> readHouseholds(@PathVariable String username) {
 
 		validateUser(username);
-		return this.householdRepository.findByAccountUsername(username);
+
+		List<HouseholdResource> householdResourceList = householdRepository.findByAccountUsername(username).stream()
+				.map(HouseholdResource::new).collect(Collectors.toList());
+
+		return new Resources<HouseholdResource>(householdResourceList);
 	}
 
 	/**
@@ -80,10 +86,10 @@ public class HouseholdRestController {
 	 * @return the Household
 	 */
 	@RequestMapping(value = "/{householdId} ", method = RequestMethod.GET)
-	public Household readHouseHold(@PathVariable String username, @PathVariable Long householdId) {
+	public HouseholdResource readHouseHold(@PathVariable String username, @PathVariable Long householdId) {
 
 		validateUser(username);
-		return this.householdRepository.findOne(householdId);
+		return new HouseholdResource(this.householdRepository.findOne(householdId));
 	}
 
 	private void validateUser(String username) {
